@@ -1,0 +1,144 @@
+---
+# tasks file for harbor-rpm
+- name: Activate SCL if on CentOS
+  yum:
+    name: centos-release-scl-rh.noarch
+    state: latest
+  when: ansible_distribution == 'CentOS'
+
+- name: Install dependencies
+  yum:
+    name: ['rh-redis5', 'rh-postgresql10-postgresql-server', 'rh-nginx114-nginx']
+    state: latest
+  with_items:
+    - rh-redis5
+    - rh-postgresql10-postgresql-server
+    - rh-nginx114-nginx
+
+- name: Install Harbor-RPM repository
+  get_url:
+    url: https://copr.fedorainfracloud.org/coprs/mrmeee/harbor/repo/epel-7/mrmeee-harbor-epel-7.repo
+    dest: /etc/yum.repos.d/mrmeee-harbor-epel-7.repo
+
+- name: Check if postgreSQL has been initialized
+  find: 
+    paths: /var/opt/rh/rh-postgresql10/lib/pgsql/data
+    file_type: directory 
+    patterns: "*"
+  register: dir_files
+
+- name: Init postgreSQL
+  shell: scl enable rh-postgresql10 "postgresql-setup --initdb"
+  when: dir_files.matched|int == 0
+
+- name: Start and enable postgresql and redis
+  service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  with_items:
+    - rh-postgresql10-postgresql
+    - rh-redis5-redis
+
+- name: Install Harbor RPM
+  yum:
+    name: harbor
+    state: latest
+
+- name: Initialize databases
+  shell: for i in `ls /etc/harbor/db/initial/*.sql`;do su - postgres -c "scl enable rh-postgresql10 \"psql -f $i\"" ;done
+
+- name: Setup Databases and access
+  shell: "{{ item }}"
+  with_items:
+    - scl enable rh-postgresql10 "psql -c \"CREATE DATABASE harbor;\""
+    - scl enable rh-postgresql10 "psql -c \"CREATE DATABASE clair;\""
+    - scl enable rh-postgresql10 "psql -c \"CREATE USER harbor WITH PASSWORD '{{ harbor_database_password }}';\""
+    - scl enable rh-postgresql10 "psql -c \"CREATE USER clair WITH PASSWORD '{{ clair_database_password  }}';\""
+    - scl enable rh-postgresql10 "psql -c \"GRANT ALL PRIVILEGES ON DATABASE harbor TO harbor;\""
+    - scl enable rh-postgresql10 "psql -c \"GRANT ALL PRIVILEGES ON DATABASE clair TO clair;\""
+  become: yes
+  become_user: postgres
+  ignore_errors: yes
+
+- name: Change postgreSQL auth to md5
+  replace:
+    path: /var/opt/rh/rh-postgresql10/lib/pgsql/data/pg_hba.conf
+    regexp: "ident"
+    replace: "md5"
+
+- name: Start postgresql
+  service:
+    name: rh-postgresql10-postgresql
+    state: restarted
+
+- name: Create certificates and setup passwords
+  shell: scl enable rh-python36 "python3 /opt/harbor/setup/app/config-rpm.py"
+
+- name: Set database passwords in core configuration
+  replace:
+    path: /etc/harbor/core/env
+    regexp: "{{ item.search }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { search: '^POSTGRESQL_PASSWORD=.*$', replace: 'POSTGRESQL_PASSWORD={{ harbor_database_password }}'}
+    - { search: '^CLAIR_DB_PASSWORD=.*$', replace: 'CLAIR_DB_PASSWORD={{ clair_database_password }}'}
+    - { search: '^HARBOR_ADMIN_PASSWORD=.*$', replace: 'HARBOR_ADMIN_PASSWORD={{ harbor_admin_password }}'}
+    - { search: '^EXT_ENDPOINT=.*$', replace: 'EXT_ENDPOINT={{ harbor_url }}'}
+
+- name: Set database passwords in clair configuration
+  replace:
+    path: /etc/harbor/clair/config.yaml
+    regexp: "{{ item.search }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { search: 'source: postgresql://clair:.*$', replace: 'source: postgresql://clair:{{ clair_database_password }}@localhost:5432/clair?sslmode=disable'}
+
+- name: Set Chartserver configuration
+  replace:
+    path: /etc/harbor/chartserver/env
+    regexp: "{{ item.search }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { search: 'CHART_URL=.*$', replace: 'CHART_URL={{ harbor_url }}/chartrepo'}
+
+- name: Set registry configuration
+  replace:
+    path: /etc/harbor/registry/config.yml
+    regexp: "{{ item.search }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { search: 'realm:.*$', replace: 'realm: {{ harbor_url }}/service/token'}
+
+- name: Set SELinux Booleans
+  seboolean:
+    name: "{{ item }}"
+    state: yes
+    persistent: yes
+  with_items:
+    - "httpd_can_network_connect"
+    - "httpd_can_network_relay"
+
+- name: Disable Firewalld
+  service:
+    name: firewalld
+    state: stopped
+    enabled: no
+
+- name: Copy nginx configuration
+  copy:
+    src: /opt/harbor/setup/ansible/files/nginx.conf
+    dest: /etc/opt/rh/rh-nginx114/nginx/nginx.conf
+    remote_src: yes
+
+- name: Start nginx
+  service:
+    name: rh-nginx114-nginx
+    state: started
+    enabled: yes
+
+- name: Start Harbor
+  service:
+    name: harbor
+    state: started
+    enabled: yes
