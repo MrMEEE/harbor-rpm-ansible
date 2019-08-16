@@ -1,0 +1,7 @@
+---
+# vars file for harbor-rpm
+
+harbor_database_password: "Harbor12345"
+clair_database_password: "Harbor12345"
+harbor_admin_password: "Harbor12345"
+harbor_url: "http://harbor.test.lan"
