@@ -1,4 +1,4 @@
 ---
 - hosts: localhost
   roles:
-    - harbor-rpm 
+    - harbor-rpm

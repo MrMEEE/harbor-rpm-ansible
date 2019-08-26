@@ -3,13 +3,13 @@
 - name: Activate SCL if on CentOS
   yum:
     name: centos-release-scl-rh.noarch
-    state: latest
+    state: installed
   when: ansible_distribution == 'CentOS'
 
 - name: Install dependencies
   yum:
     name: ['rh-redis5', 'rh-postgresql10-postgresql-server', 'rh-nginx114-nginx']
-    state: latest
+    state: installed
   with_items:
     - rh-redis5
     - rh-postgresql10-postgresql-server
@@ -21,14 +21,14 @@
     dest: /etc/yum.repos.d/mrmeee-harbor-epel-7.repo
 
 - name: Check if postgreSQL has been initialized
-  find: 
+  find:
     paths: /var/opt/rh/rh-postgresql10/lib/pgsql/data
-    file_type: directory 
+    file_type: directory
     patterns: "*"
   register: dir_files
 
 - name: Init postgreSQL
-  shell: scl enable rh-postgresql10 "postgresql-setup --initdb"
+  command: scl enable rh-postgresql10 "postgresql-setup --initdb"
   when: dir_files.matched|int == 0
 
 - name: Start and enable postgresql and redis
@@ -43,13 +43,13 @@
 - name: Install Harbor RPM
   yum:
     name: harbor
-    state: latest
+    state: installed
 
 - name: Initialize databases
-  shell: for i in `ls /etc/harbor/db/initial/*.sql`;do su - postgres -c "scl enable rh-postgresql10 \"psql -f $i\"" ;done
+  command: for i in `ls /etc/harbor/db/initial/*.sql`;do su - postgres -c "scl enable rh-postgresql10 \"psql -f $i\"" ;done
 
 - name: Setup Databases and access
-  shell: "{{ item }}"
+  command: "{{ item }}"
   with_items:
     - scl enable rh-postgresql10 "psql -c \"CREATE DATABASE harbor;\""
     - scl enable rh-postgresql10 "psql -c \"CREATE DATABASE clair;\""
@@ -73,7 +73,7 @@
     state: restarted
 
 - name: Create certificates and setup passwords
-  shell: scl enable rh-python36 "python3 /opt/harbor/setup/app/config-rpm.py"
+  command: scl enable rh-python36 "python3 /opt/harbor/setup/app/config-rpm.py"
 
 - name: Set database passwords in core configuration
   replace:
