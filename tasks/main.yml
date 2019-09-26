@@ -47,6 +47,8 @@
 
 - name: Initialize databases
   command: for i in `ls /etc/harbor/db/initial/*.sql`;do su - postgres -c "scl enable rh-postgresql10 \"psql -f $i\"" ;done
+  become: yes
+  become_user: postgres
 
 - name: Setup Databases and access
   command: "{{ item }}"
