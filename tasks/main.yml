@@ -196,6 +196,7 @@
     name: firewalld
     state: stopped
     enabled: no
+  ignore_errors: yes
 
 - name: Copy nginx configuration
   copy:
