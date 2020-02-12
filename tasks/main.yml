@@ -60,6 +60,7 @@
     login_user: postgres
     db: postgres
     path_to_script: /etc/harbor/db/initial/initial-notaryserver.sql
+    autocommit: yes
   register: result
 
 - debug:
@@ -72,6 +73,7 @@
     login_user: postgres
     db: postgres
     path_to_script: /etc/harbor/db/initial/initial-notarysigner.sql
+    autocommit: yes
   register: result
 
 - debug:
@@ -84,6 +86,7 @@
     login_user: postgres
     db: postgres
     path_to_script: /etc/harbor/db/initial/initial-registry.sql
+    autocommit: yes
   register: result
 
 - debug:
