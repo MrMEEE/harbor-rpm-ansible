@@ -64,11 +64,15 @@
   postgresql_db:
     name: notaryserver
     owner: server
+  become: yes
+  become_user: postgres
 
 - name: Create postgresql user with name "signer"
   postgresql_user:
     name: signer
     password: password
+  become: yes
+  become_user: postgres
 
 - name: Create a new database with name "notarysigner"
   postgresql_db:
@@ -79,10 +83,14 @@
   postgresql_user:
     name: signer
     password: password
+  become: yes
+  become_user: postgres
 
 - name: Create a new database with name "registry"
   postgresql_db:
     name: registry
+  become: yes
+  become_user: postgres
 
 - name: Create table with name "schema_migrations"
   postgresql_table:
@@ -92,6 +100,8 @@
     - version bigint not null primary key
     - dirty boolean not null
     - stories text
+  become: yes
+  become_user: postgres
 
 - name: Setup Databases and access
   command: "{{ item }}"
