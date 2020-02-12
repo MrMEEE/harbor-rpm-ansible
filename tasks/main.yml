@@ -6,12 +6,10 @@
     state: installed
   when: ansible_distribution == 'CentOS'
 
-
-- name: Add repository PostgreSQL 10 for RHEL/CentOS $releasever - $basearch
-  yum_repository:
-    name: pgdg10
-    description: PostgreSQL 10 for RHEL/CentOS $releasever - $basearch
-    baseurl: https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-$releasever-$basearch
+- name: install repository PostgreSQL for RHEL/CentOS $releasever - $basearch
+  yum:
+    name: https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-$releasever-$basearch
+    state: present
 
 - name: Install dependencies
   yum:
