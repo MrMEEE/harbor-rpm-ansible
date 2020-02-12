@@ -108,7 +108,7 @@
 - name: Create postgresql user with name "harbor"
   postgresql_user:
     name: harbor
-    password: {{ harbor_database_password }}
+    password: "{{ harbor_database_password }}"
   become: yes
   become_user: postgres
 
@@ -122,7 +122,7 @@
 - name: Create postgresql user with name "clair"
   postgresql_user:
     name: clair
-    password: {{ clair_database_password }}
+    password: "{{ clair_database_password }}"
   become: yes
   become_user: postgres
 
