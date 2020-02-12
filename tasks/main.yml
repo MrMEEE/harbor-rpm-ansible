@@ -105,18 +105,33 @@
   become: yes
   become_user: postgres
 
-- name: Setup Databases and access
-  command: "{{ item }}"
-  with_items:
-    - psql -c \"CREATE DATABASE harbor;\"
-    - psql -c \"CREATE DATABASE clair;\"
-    - psql -c \"CREATE USER harbor WITH PASSWORD '{{ harbor_database_password }}';\"
-    - psql -c \"CREATE USER clair WITH PASSWORD '{{ clair_database_password  }}';\"
-    - psql -c \"GRANT ALL PRIVILEGES ON DATABASE harbor TO harbor;\"
-    - psql -c \"GRANT ALL PRIVILEGES ON DATABASE clair TO clair;\"
+- name: Create postgresql user with name "harbor"
+  postgresql_user:
+    name: harbor
+    password: {{ harbor_database_password }}
   become: yes
   become_user: postgres
-  ignore_errors: yes
+
+- name: Create a new database with name "harbor"
+  postgresql_db:
+    name: harbor
+    owner: harbor
+  become: yes
+  become_user: postgres
+
+- name: Create postgresql user with name "clair"
+  postgresql_user:
+    name: clair
+    password: {{ clair_database_password }}
+  become: yes
+  become_user: postgres
+
+- name: Create a new database with name "clair"
+  postgresql_db:
+    name: clair
+    owner: clair
+  become: yes
+  become_user: postgres
 
 - name: Change postgreSQL auth to md5
   replace:
