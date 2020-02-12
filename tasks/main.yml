@@ -57,6 +57,8 @@
   postgresql_user:
     name: server
     password: password
+  become: yes
+  become_user: postgres
 
 - name: Create a new database with name "notaryserver"
   postgresql_db:
