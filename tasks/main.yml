@@ -53,44 +53,43 @@
     name: harbor
     state: installed
 
-- name: /etc/harbor/db/initial/initial-notaryserver.sql
-  become_user: postgres
-  become: yes
-  postgresql_query:
-    login_user: postgres
-    db: postgres
-    path_to_script: /etc/harbor/db/initial/initial-notaryserver.sql
-    autocommit: yes
-  register: result
+- name: Create postgresql user with name "server"
+  postgresql_user:
+    name: server
+    password: password
 
-- debug:
-    msg: result /etc/harbor/db/initial/initial-notaryserver.sql {{ result }}
+- name: Create a new database with name "notaryserver"
+  postgresql_db:
+    name: notaryserver
+    owner: server
 
-- name: /etc/harbor/db/initial/initial-notarysigner.sql
-  become_user: postgres
-  become: yes
-  postgresql_query:
-    login_user: postgres
-    db: postgres
-    path_to_script: /etc/harbor/db/initial/initial-notarysigner.sql
-    autocommit: yes
-  register: result
+- name: Create postgresql user with name "signer"
+  postgresql_user:
+    name: signer
+    password: password
 
-- debug:
-    msg: result /etc/harbor/db/initial/initial-notarysigner.sql {{ result }}
+- name: Create a new database with name "notarysigner"
+  postgresql_db:
+    name: notarysigner
+    owner: signer
 
-- name: /etc/harbor/db/initial/initial-registry.sql
-  become_user: postgres
-  become: yes
-  postgresql_query:
-    login_user: postgres
-    db: postgres
-    path_to_script: /etc/harbor/db/initial/initial-registry.sql
-    autocommit: yes
-  register: result
+- name: Create postgresql user with name "signer"
+  postgresql_user:
+    name: signer
+    password: password
 
-- debug:
-    msg: result /etc/harbor/db/initial/initial-registry.sql {{ result }}
+- name: Create a new database with name "registry"
+  postgresql_db:
+    name: registry
+
+- name: Create table with name "schema_migrations"
+  postgresql_table:
+    name: schema_migrations
+    db: registry
+    columns:
+    - version bigint not null primary key
+    - dirty boolean not null
+    - stories text
 
 - name: Setup Databases and access
   command: "{{ item }}"
