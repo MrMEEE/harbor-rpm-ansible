@@ -11,15 +11,16 @@
     name: https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
     state: present
 
+
 - name: Install dependencies
-  yum:
-    name: ['rh-redis5', 'rh-nginx114-nginx', 'postgresql10', 'postgresql10-server']
-    state: installed
+  yum: name={{ item }} state=present
   with_items:
     - rh-redis5
     - rh-nginx114-nginx
     - postgresql10
     - postgresql10-server
+    - python2-psycopg2
+
 
 - name: Install Harbor-RPM repository
   get_url:
