@@ -129,11 +129,13 @@
     - "httpd_can_network_connect"
     - "httpd_can_network_relay"
 
-- name: Disable Firewalld
+- name: Stop and disable Firewalld service
   service:
-    name: firewalld
-    state: stopped
+    name:    firewalld
     enabled: no
+    state:   stopped
+  register: firewalld_service_result
+  failed_when: "firewalld_service_result is failed and 'Could not find the requested service' not in firewalld_service_result.msg"
 
 - name: Copy nginx configuration
   copy:
