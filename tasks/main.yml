@@ -165,6 +165,14 @@
     replace: "{{ item.replace }}"
   with_items:
     - { search: 'source: postgresql://clair:.*$', replace: 'source: postgresql://clair:{{ clair_database_password }}@localhost:5432/clair?sslmode=disable'}
+    
+- name: Set database passwords in clair adapter configuration
+  replace:
+    path: /etc/harbor/clair-adapter/env
+    regexp: "{{ item.search }}"
+    replace: "{{ item.replace }}"
+  with_items:
+    - { search: 'postgresql://clair:clair_db_password@localhost:5432/clair?sslmode=disable.*$', replace: 'postgresql://clair:{{ clair_database_password }}@localhost:5432/clair?sslmode=disable'}
 
 - name: Set Chartserver configuration
   replace:
