@@ -46,7 +46,11 @@
     state: installed
 
 - name: Initialize databases
-  command: for i in `ls /etc/harbor/db/initial/*.sql`;do su - postgres -c "scl enable rh-postgresql10 \"psql -f $i\"" ;done
+  command: "{{ item }}"
+  with_items:
+    - scl enable rh-postgresql10 "psql -f /etc/harbor/db/initial/initial-notaryserver.sql"
+    - scl enable rh-postgresql10 "psql -f /etc/harbor/db/initial/initial-notarysigner.sql"
+    - scl enable rh-postgresql10 "psql -f /etc/harbor/db/initial/initial-registry.sql"
   become: yes
   become_user: postgres
 
