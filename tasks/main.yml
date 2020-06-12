@@ -132,6 +132,9 @@
   with_items:
     - "httpd_can_network_connect"
     - "httpd_can_network_relay"
+  when: ansible_selinux and ansible_selinux.status == "enabled"
+  failed_when: false
+  changed_when: false
 
 - name: Stop and disable Firewalld service
   service:
